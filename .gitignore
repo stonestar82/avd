@@ -4,3 +4,4 @@ __pycache__/
 inventory/config_backup
 inventory/documentation
 upload/
+~$inventory.xlsx
