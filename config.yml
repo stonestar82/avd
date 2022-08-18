@@ -1,0 +1,11 @@
+---
+- name: Manage Arista EOS EVPN/VXLAN Configuration
+  hosts: DC1_FABRIC
+  connection: local
+  gather_facts: false
+  collections:
+    - arista.avd
+  tasks:
+    - name: generate device intended config and documentation
+      import_role:
+        name: eos_cli_config_gen

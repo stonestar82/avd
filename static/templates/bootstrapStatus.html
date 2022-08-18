@@ -1,0 +1,16 @@
+<table border="">
+  <tr>
+    <td>IP</td>
+    <td>Status</td>
+    <td>SysMac</td>
+    <td>Serial</td>
+  </tr>
+  {% for line in status %}
+  <tr>
+    <td>{{ line.ip }}</td>
+    <td>{{ line.status }}</td>
+    <td>{{ line.mac }}</td>
+    <td>{{ line.serial }}</td>
+  </tr>
+  {% endfor %}
+</table>
