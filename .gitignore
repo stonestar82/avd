@@ -3,6 +3,5 @@ __pycache__/
 inventory/config_backup/
 inventory/documentation/
 inventory/intended/configs/
-upload/
 ~$*.xlsx
 *.cfg

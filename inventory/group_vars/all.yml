@@ -2,7 +2,7 @@
 
 ## terminal length
 terminal:
-  length: 40
+  length: 400
   width: 200
 
 ## spanning-tree mode mstp
