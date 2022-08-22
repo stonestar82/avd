@@ -1,12 +1,13 @@
 router_bgp:
   as: '65000'
-  router_id: 1.1.1.201
+  router_id: 1.1.1.1
   bgp_defaults:
   - no bgp default ipv4-unicast
   - maximum-paths 8 ecmp 8
   peer_groups:
     UNDERLAY:
       type: ipv4
+      password: GT
       maximum_routes: 12000
       send_community: all
       bgp_listen_range_prefix: 100.64.0.0/10
@@ -17,11 +18,12 @@ router_bgp:
       update_source: Loopback0
       bfd: true
       ebgp_multihop: '3'
+      password: GT
       send_community: all
       maximum_routes: 0
       bgp_listen_range_prefix: 1.1.1.0/24
       peer_filter: Leaf-Ass
-      remote_as: '65000'
+      remote_as: '65001'
       next_hop_unchanged: true
   address_family_ipv4:
     peer_groups:
@@ -33,57 +35,57 @@ router_bgp:
     connected:
       route_map: RM-CONN-2-BGP
   neighbors:
-    100.100.0.1:
+    100.100.0.9:
       peer_group: UNDERLAY
       type: ipv4
       remote_as: '65001'
       description: Leaf-01
-    100.100.0.5:
+    100.100.0.13:
       peer_group: UNDERLAY
       type: ipv4
       remote_as: '65002'
       description: Leaf-02
-    100.100.0.9:
+    100.100.0.17:
       peer_group: UNDERLAY
       type: ipv4
       remote_as: '65003'
       description: Leaf-03
-    100.100.0.13:
+    100.100.0.21:
       peer_group: UNDERLAY
       type: ipv4
       remote_as: '65004'
       description: Leaf-04
-    100.100.0.17:
+    100.100.0.25:
       peer_group: UNDERLAY
       type: ipv4
       remote_as: '65005'
       description: BL-01
-    100.100.0.21:
+    100.100.0.29:
       peer_group: UNDERLAY
       type: ipv4
       remote_as: '65005'
       description: BL-02
-    1.1.1.5:
+    1.1.1.8:
       peer_group: EVPN
       description: BL-01
       remote_as: '65005'
-    1.1.1.6:
+    1.1.1.9:
       peer_group: EVPN
       description: BL-02
       remote_as: '65005'
-    1.1.1.1:
+    1.1.1.4:
       peer_group: EVPN
       description: Leaf-01
       remote_as: '65001'
-    1.1.1.2:
+    1.1.1.5:
       peer_group: EVPN
       description: Leaf-02
       remote_as: '65002'
-    1.1.1.3:
+    1.1.1.6:
       peer_group: EVPN
       description: Leaf-03
       remote_as: '65003'
-    1.1.1.4:
+    1.1.1.7:
       peer_group: EVPN
       description: Leaf-04
       remote_as: '65004'
@@ -94,7 +96,7 @@ router_bgp:
 static_routes:
 - vrf: MGMT
   destination_address_prefix: 0.0.0.0/0
-  gateway: 192.168.22.1
+  gateway: 192.168.22.254
 service_routing_protocols_model: multi-agent
 ip_routing: true
 vlan_internal_order:
@@ -113,11 +115,11 @@ local_users:
   admin:
     privilege: 15
     role: network-admin
-    sha512_password: $6$sbSVn6IgN2A7VIJJ$8g/z9ibMbFlO06jbpowU/PyB9kJvIgPNeSVyXjjanW8eftykpP7S32CFEdmb0nj0D8JXOKUNWe97T2wNvWSbm1
+    sha512_password: admin
   ansible:
     privilege: 15
     role: network-admin
-    sha512_password: $6$88e4YP9cN86RUUUZ$LBzKr2P.tfRkEZja4srfLK3t8TXCKx//t1LM59B6sr7AujC2HFTyKAsHZCxV/WOzHE/e7yrdlpMQxbaq/KW370
+    sha512_password: ansible
 vrfs:
   MGMT:
     ip_routing: false
@@ -127,7 +129,7 @@ management_interfaces:
     shutdown: false
     vrf: MGMT
     ip_address: 192.168.22.191/24
-    gateway: 192.168.22.1
+    gateway: 192.168.22.254
     type: oob
 management_api_http:
   enable_vrfs:
@@ -144,7 +146,7 @@ ethernet_interfaces:
     mtu: 1500
     type: routed
     shutdown: false
-    ip_address: 100.100.0.0/31
+    ip_address: 100.100.0.8/31
   Ethernet2:
     peer: Leaf-02
     peer_interface: Ethernet1
@@ -153,7 +155,7 @@ ethernet_interfaces:
     mtu: 1500
     type: routed
     shutdown: false
-    ip_address: 100.100.0.4/31
+    ip_address: 100.100.0.12/31
   Ethernet3:
     peer: Leaf-03
     peer_interface: Ethernet1
@@ -162,7 +164,7 @@ ethernet_interfaces:
     mtu: 1500
     type: routed
     shutdown: false
-    ip_address: 100.100.0.8/31
+    ip_address: 100.100.0.16/31
   Ethernet4:
     peer: Leaf-04
     peer_interface: Ethernet1
@@ -171,7 +173,7 @@ ethernet_interfaces:
     mtu: 1500
     type: routed
     shutdown: false
-    ip_address: 100.100.0.12/31
+    ip_address: 100.100.0.20/31
   Ethernet5:
     peer: BL-01
     peer_interface: Ethernet1
@@ -180,7 +182,7 @@ ethernet_interfaces:
     mtu: 1500
     type: routed
     shutdown: false
-    ip_address: 100.100.0.16/31
+    ip_address: 100.100.0.24/31
   Ethernet6:
     peer: BL-02
     peer_interface: Ethernet1
@@ -189,12 +191,12 @@ ethernet_interfaces:
     mtu: 1500
     type: routed
     shutdown: false
-    ip_address: 100.100.0.20/31
+    ip_address: 100.100.0.28/31
 loopback_interfaces:
   Loopback0:
     description: RouterID_EVPN
     shutdown: false
-    ip_address: 1.1.1.201/32
+    ip_address: 1.1.1.1/32
 prefix_lists:
 - name: Loopback
   sequence_numbers:

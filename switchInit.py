@@ -13,7 +13,7 @@ def taskPrint(task):
   print(task.ljust(100, "*") + "\n")
 
 def main():
-  with open("switchInit.json", "r") as f:
+  with open("excelEnvriment.json", "r") as f:
     config = json.load(f)
     f.close()
 

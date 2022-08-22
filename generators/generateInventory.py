@@ -1,25 +1,22 @@
+from multiprocessing.sharedctypes import Value
 from pickle import NONE
-import xlrd, re
+import xlrd, re, ipaddress
 import yaml
+from generators.BlankNone import *
+from openpyxl import load_workbook
+from operator import eq
 
 def convertToBoolIfNeeded(variable):
 	if type(variable) == str and re.match(r'(?i)(True|False)', variable.strip()):
 		variable = True if re.match(r'(?i)true', variable.strip()) else False
 	return variable
 
-def getFabricName(inventory_file):
-	workbook = xlrd.open_workbook(inventory_file)
-	info_worksheet = workbook.sheet_by_name("General Configuration Details")
-	# transform the workbook to a list of dictionaries
-	for row in range(1, info_worksheet.nrows):
-		k, v = info_worksheet.cell_value(row,0), info_worksheet.cell_value(row,1)
-		if k == "Fabric Name":
-			v = v if v != "" else None
-			return v
-	return None
+def getFabricName(inventory_file, excelVar):
+  workbook = load_workbook(filename=inventory_file, read_only=False, data_only=True)
+  return getExcelSheetValue(workbook, excelVar["all"]["fabricName"])
 
 def getCVPAddresses(inventory_file):
-	workbook = xlrd.open_workbook(inventory_file)
+	workbook = load_workbook(filename=inventory_file, read_only=False, data_only=True)
 	info_worksheet = workbook.sheet_by_name("General Configuration Details")
 	# transform the workbook to a list of dictionaries
 	for row in range(1, info_worksheet.nrows):
@@ -40,76 +37,70 @@ def getCVPInventory(inventory_file):
 		break
 	return cvp_dict
 
-def parseSuperSpineInfo(inventory_file):
-	'''
-	'''
-	spines_info = {"vars": {"type": "super-spine"}, "hosts": {}}
-	workbook = xlrd.open_workbook(inventory_file)
-	inventory_worksheet = workbook.sheet_by_name("Spine Info")
-	node_groups = {}
-	first_row = [] # The row where we stock the name of the column
-	for col in range(inventory_worksheet.ncols):
-		first_row.append( inventory_worksheet.cell_value(0,col) )
-	# transform the workbook to a list of dictionaries
-	for row in range(1, inventory_worksheet.nrows):
-		spine_info = {}
-		for col in range(inventory_worksheet.ncols):
-			spine_info[first_row[col]]=inventory_worksheet.cell_value(row,col)
-		
-		if convertToBoolIfNeeded(spine_info["Super Spine"]):
-			hostname = spine_info["Hostname"]
-			spines_info["hosts"][hostname] = {"ansible_host": spine_info["Management IP"].split("/")[0]}
-	return spines_info
-
-def parseSpineInfo(inventory_file):
+def parseSpineInfo(inventory_file, excelVar):
 	'''
 	'''
 	spines_info = {"vars": {"type": "spine"}, "hosts": {}}
-	workbook = xlrd.open_workbook(inventory_file)
-	inventory_worksheet = workbook.sheet_by_name("Spine Info")
-	node_groups = {}
-	first_row = [] # The row where we stock the name of the column
-	for col in range(inventory_worksheet.ncols):
-		first_row.append( inventory_worksheet.cell_value(0,col) )
-	# transform the workbook to a list of dictionaries
-	for row in range(1, inventory_worksheet.nrows):
-		spine_info = {}
-		for col in range(inventory_worksheet.ncols):
-			spine_info[first_row[col]]=inventory_worksheet.cell_value(row,col)
-		
-		# if not convertToBoolIfNeeded(spine_info["Super Spine"]):
-		hostname = spine_info["Hostname"]
-		spines_info["hosts"][hostname] = {"ansible_host": spine_info["Management IP"].split("/")[0]}
+	workbook = load_workbook(filename=inventory_file, read_only=True, data_only=True)
+	inventory_worksheet = workbook[excelVar["spine"]["sheet"]]
+
+	spinePrefix = excelVar["spine"]["prefix"]
+	spineHostnameCol = excelVar["spine"]["props"]["hostname"]["col"]
+
+	for row in inventory_worksheet.iter_rows():
+		for cell in row:
+			# print(cell)
+			if cell.value:
+				if eq(cell.coordinate, spineHostnameCol + str(cell.row)):
+					p = re.compile(spinePrefix)
+					if (p.match(str(cell.value))):
+						codi = excelVar["spine"]["props"]["mgmt"]["col"] + str(cell.row)
+						mgmtIp = inventory_worksheet[codi].value.split("/")[0]
+						spines_info["hosts"][cell.value] = {"ansible_host": mgmtIp}
+	
 	return spines_info
 
-def parseLeafInfo(inventory_file, leaf_type="L3"):
+def parseLeafInfo(inventory_file, excelVar, leaf_type="L3"):
 	'''
 	type: options are 'L3' or 'L2'
 	'''
 	leafs = {}
-	workbook = xlrd.open_workbook(inventory_file)
+	workbook = load_workbook(filename=inventory_file, read_only=True, data_only=True)
 	sheetname = "L3 Leaf Info" if leaf_type == "L3" else "L2 Leaf Info"
 	leafTypeName = "l3leaf" if leaf_type == "L3" else "l2leaf"
-	inventory_worksheet = workbook.sheet_by_name(sheetname)
+	inventory_worksheet = workbook[excelVar["leaf"]["sheet"]]
 	node_groups = {}
-	first_row = [] # The row where we stock the name of the column
-	for col in range(inventory_worksheet.ncols):
-		first_row.append( inventory_worksheet.cell_value(0,col) )
+	
 	# transform the workbook to a list of dictionaries
-	for row in range(1, inventory_worksheet.nrows):
+	leafPrefix = excelVar["leaf"]["prefix"]
+	leafHostnameCol = excelVar["leaf"]["props"]["hostname"]["col"]
+	
+
+	for row in inventory_worksheet.iter_rows():
 		leaf_info = {}
-		for col in range(inventory_worksheet.ncols):
-			leaf_info[first_row[col]]=inventory_worksheet.cell_value(row,col)
-		hostname = leaf_info["Hostname"]
-		node_details = {}
-		node_details["ansible_host"] = leaf_info["Management IP"].split("/")[0]
-		if leaf_info["Container Name"] not in node_groups.keys():
-			node_groups[leaf_info["Container Name"]] = {
-				"vars": {"type": leafTypeName},
-				"hosts": {hostname: node_details}
-			}
-		else:
-			node_groups[leaf_info["Container Name"]]["hosts"][hostname] = node_details
+		for cell in row:
+			# print(cell)
+			if cell.value:
+				if eq(cell.coordinate, leafHostnameCol + str(cell.row)):
+					p = re.compile(leafPrefix)
+					if (p.match(str(cell.value))):
+						hostname = cell.value
+						codi = excelVar["leaf"]["props"]["mgmt"]["col"] + str(cell.row)
+						mgmtIp = inventory_worksheet[codi].value.split("/")[0]		
+      
+						node_details = {}
+						node_details["ansible_host"] = mgmtIp
+      
+						codi = excelVar["leaf"]["props"]["container"]["col"] + str(cell.row)
+						leaf_info["Container Name"] = inventory_worksheet[codi].value
+						if leaf_info["Container Name"] not in node_groups.keys():
+							node_groups[leaf_info["Container Name"]] = {
+								"vars": {"type": leafTypeName},
+								"hosts": {hostname: node_details}
+							}
+						else:
+							node_groups[leaf_info["Container Name"]]["hosts"][hostname] = node_details
+
 
 	if len(node_groups) > 0: 
 		leafs["children"] = node_groups
@@ -125,18 +116,15 @@ def getTenantNetworks(fabric_name):
 	tn = {"children": {fabric_name + "_L3LEAFS": None, fabric_name + "_L2LEAFS": None}}
 	return tn
 
-def getFabricInventory(inventory_file, fabric_name):
+def getFabricInventory(inventory_file, fabric_name, excelVar):
 	fabric_inventory = {"children":{}}
 
 	# fabric_inventory["children"][fabric_name+"_SUPERSPINES"] = parseSuperSpineInfo(inventory_file)
 
-	fabric_inventory["children"][fabric_name+"_SPINES"] = parseSpineInfo(inventory_file)
+	fabric_inventory["children"][fabric_name+"_SPINES"] = parseSpineInfo(inventory_file, excelVar)
 	
-	if parseLeafInfo(inventory_file, leaf_type="L3") != None:
-		fabric_inventory["children"][fabric_name+"_L3LEAFS"] = parseLeafInfo(inventory_file, leaf_type="L3")
-
-	if parseLeafInfo(inventory_file, leaf_type="L2") != None:
-		fabric_inventory["children"][fabric_name+"_L2LEAFS"] = parseLeafInfo(inventory_file, leaf_type="L2")
+	if parseLeafInfo(inventory_file, excelVar, leaf_type="L3") != None:
+		fabric_inventory["children"][fabric_name+"_L3LEAFS"] = parseLeafInfo(inventory_file, excelVar, leaf_type="L3")
 		
 	fabric_inventory["vars"] = {
 		"ansible_connection": "network_cli",
@@ -150,8 +138,9 @@ def getFabricInventory(inventory_file, fabric_name):
 	}
 	return fabric_inventory
 
-def generateInventory(inventory_file):
-	fabric_name = getFabricName(inventory_file)
+def generateInventory(inventory_file, excelVar):
+	fabric_name = getFabricName(inventory_file, excelVar)
+
 	if fabric_name is None:
 		return
 
@@ -177,7 +166,7 @@ def generateInventory(inventory_file):
 	# inventory["all"]["children"]["CVP"] = getCVPInventory(inventory_file)
 
 	#Add Fabric info
-	inventory["all"]["children"][fabric_name]["children"][fabric_name + "_FABRIC"] = getFabricInventory(inventory_file, fabric_name)
+	inventory["all"]["children"][fabric_name]["children"][fabric_name + "_FABRIC"] = getFabricInventory(inventory_file, fabric_name, excelVar)
 
 	# inventory = {"all":{"children":{
 	#     "CVP": None,

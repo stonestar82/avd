@@ -1,6 +1,6 @@
 ---
 - name: Manage Arista EOS EVPN/VXLAN Configuration
-  hosts: DC_FABRIC
+  hosts: {{ fabricName }}_FABRIC
   connection: local
   gather_facts: false
   collections:

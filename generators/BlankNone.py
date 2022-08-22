@@ -1,10 +1,14 @@
 import yaml
-
 from yaml.representer import Representer
 from yaml.dumper import Dumper
-from yaml.emitter import Emitter
-from yaml.serializer import Serializer
-from yaml.resolver import Resolver
+
+def getExcelSheetValue(excel, config):
+  v = excel[config["sheet"]][config["p"]].value
+  
+  if v == "" or not v:
+    v = config["defaultValue"]
+
+  return v
 
 class BlankNone(Representer):
   """Print None as blank when used as context manager"""

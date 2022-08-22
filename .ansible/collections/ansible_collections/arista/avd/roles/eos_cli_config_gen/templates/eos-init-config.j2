@@ -20,7 +20,7 @@ logging synchronous level all
 {%               set local_user_cli = local_user_cli ~ " role " ~ local_user.role %}
 {%           endif %}
 {%           if local_user.sha512_password is arista.avd.defined %}
-{%               set local_user_cli = local_user_cli ~ " secret sha512 " ~ local_user.sha512_password %}
+{%               set local_user_cli = local_user_cli ~ " secret " ~ local_user.sha512_password %}
 {%           elif local_user.no_password is arista.avd.defined(true) %}
 {%               set local_user_cli = local_user_cli ~ " nopassword" %}
 {%           endif %}

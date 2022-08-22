@@ -9,13 +9,13 @@ class Spine():
 
     # self.sheetName column name
     self.id = "ID"
-    self.hostname = "Hostname"
-    self.managementIp = "Management IP"
+    self.hostname = "HOSTNAME"
+    self.managementIp = "MGMT"
     self.superSpine = "Super Spine"
 
     # self.detailSheetName column name
     self.platform = "Platform"
-    self.bgpAsn = "BGP ASN"
+    self.bgpAsn = "BGP_ASN"
     self.bgpPeeringAsnRange = "BGP Peering ASN Range"
     self.bgpWaitInstall = "BGP wait-install"
     self.bgpWaitForConvergence = "BGP wait-for-convergence"

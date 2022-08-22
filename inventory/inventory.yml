@@ -1,10 +1,10 @@
 all:
   children:
-    DC1:
+    DC:
       children:
-        DC1_FABRIC:
+        DC_FABRIC:
           children:
-            DC1_SPINES:
+            DC_SPINES:
               vars:
                 type: spine
               hosts:
@@ -12,33 +12,33 @@ all:
                   ansible_host: 192.168.22.191
                 Spine-02:
                   ansible_host: 192.168.22.192
-            DC1_L3LEAFS:
+            DC_L3LEAFS:
               children:
-                DC1_LEAF1:
+                DC_LEAF1:
                   vars:
                     type: l3leaf
                   hosts:
                     Leaf-01:
                       ansible_host: 192.168.22.193
-                DC1_LEAF2:
+                DC_LEAF2:
                   vars:
                     type: l3leaf
                   hosts:
                     Leaf-02:
                       ansible_host: 192.168.22.194
-                DC1_LEAF3:
+                DC_LEAF3:
                   vars:
                     type: l3leaf
                   hosts:
                     Leaf-03:
                       ansible_host: 192.168.22.195
-                DC1_LEAF4:
+                DC_LEAF4:
                   vars:
                     type: l3leaf
                   hosts:
                     Leaf-04:
                       ansible_host: 192.168.22.196
-                DC1_BL:
+                BL:
                   vars:
                     type: l3leaf
                   hosts:
@@ -55,11 +55,11 @@ all:
             ansible_become_method: enable
             ansible_httpapi_use_ssl: false
             ansible_httpapi_validate_certs: false
-    DC1_SERVERS:
+    DC_SERVERS:
       children:
-        DC1_L3LEAFS:
-        DC1_L2_LEAFS:
-    DC1_TENANTS_NETWORKS:
+        DC_L3LEAFS:
+        DC_L2_LEAFS:
+    DC_TENANTS_NETWORKS:
       children:
-        DC1_L3LEAFS:
-        DC1_L2LEAFS:
+        DC_L3LEAFS:
+        DC_L2LEAFS:
